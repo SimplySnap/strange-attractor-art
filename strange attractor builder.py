@@ -5,8 +5,6 @@ from matplotlib import pyplot
 
 n = 12
 found = 0
-t_start = -2
-t_end = 2
 
 while found < n:
     x = random.uniform(-0.5,0.5)
@@ -34,8 +32,8 @@ while found < n:
     #main generating loop
     t = t_start
     for i in range(10000):
-        xnew = a[0] + a[1]*x + a[2]*x*x + a[3]*y + a[4]*y*y + a[5]*x*y + a[6]*x*t + a[7]*y*t + a[8]*x
-        ynew = a[9] + a[9]*x + a[10]*x*x + a[11]*y + a[12]*y*y + a[13]*x*y + a[14]*x*t + a[15]*y*t + a[16]*x
+        xnew = a[0] + a[1]*x + a[2]*x*x + a[3]*y + a[4]*y*y + a[5]*x*y
+        ynew = a[6] + a[7]*x + a[8]*x*x + a[9]*y + a[10]*y*y + a[11]*x*y
 
         #Checking for convergence to infinity to rule out
         if abs(xnew) > 1e10 or abs(ynew) > 1e10: 
@@ -68,7 +66,6 @@ while found < n:
         #updating (x,y)
         x = xnew
         y = ynew
-        t = t + i/1000*4
 
         x_list.append(x)
         y_list.append(y)
