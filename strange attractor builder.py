@@ -30,7 +30,6 @@ while found < n:
     converging = False
 
     #main generating loop
-    t = t_start
     for i in range(10000):
         xnew = a[0] + a[1]*x + a[2]*x*x + a[3]*y + a[4]*y*y + a[5]*x*y
         ynew = a[6] + a[7]*x + a[8]*x*x + a[9]*y + a[10]*y*y + a[11]*x*y
@@ -71,7 +70,7 @@ while found < n:
         y_list.append(y)
     
     #Checking if we have found chaotic behaviour
-    if not converging and lyapunov >= 100:
+    if not converging and lyapunov >= 20:
         found +=1;
         print("We found a strange attractor with L = "+ str(lyapunov))
 
@@ -82,7 +81,7 @@ while found < n:
         pyplot.style.use('dark_background')
         pyplot.axis('off')
 
-        pyplot.scatter(x_list[100:], y_list[100:], s = 0.1, c = 'white', linewidth = 0,)
+        pyplot.scatter(x_list, y_list, s = 0.1, c = 'white', linewidth = 0,)
 
-        pyplot.savefig('pics/' + str(time()) + '.png', dpi = 200)
+        pyplot.savefig('pics/' + str(time()) + '.png', dpi = 300)
         #pyplot.show()
