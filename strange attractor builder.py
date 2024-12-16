@@ -39,7 +39,9 @@ generate_attractor()
 fig, ax = plt.subplots()
 plt.style.use('dark_background')
 ax.axis('off')
-scat = ax.scatter([], [], s=0.1, c='white', linewidth=0)
+
+# Initialize the scatter plot with dummy data
+scat = ax.scatter([0], [0], s=0.1, c='white', linewidth=0)
 
 # Update function for animation
 def update(frame):
@@ -81,7 +83,7 @@ def update(frame):
 
     if not converging and lyapunov >= 100:
         found += 1
-        print("We found a strange attractor with L = " + str(lyapunov))
+        print(f"We found a strange attractor with L = {lyapunov}")
         generate_attractor()
 
     # Update scatter plot
