@@ -3,7 +3,7 @@ import math
 from time import time
 from matplotlib import pyplot
 
-n = 12
+n = 12 # Number of 
 found = 0
 
 while found < n:
@@ -54,13 +54,15 @@ while found < n:
             dy = yenew - ye
             d = math.sqrt(dx*dx + dy*dy)
 
-            #update the lyapunov exponent
-            lyapunov += math.log(abs(d/d0))
+            #update the lyapunov exponent - use eps to prevent problems with convergence
+            eps = 1e-10
+            lyapunov += math.log((d + eps) / (d0 + eps))
+            lyapunov = lyapunov / (i - 1000)
 
             #rescale alternate point
-            xe = xnew + d0*dx/d
-            ye = ynew + d0*dy/d
-
+            scaling_factor = d0 / d #To keep scaling constant over iterations
+            xe = xnew + dx * scaling_factor
+            ye = ynew + dy * scaling_factor
 
         #updating (x,y)
         x = xnew
@@ -70,7 +72,7 @@ while found < n:
         y_list.append(y)
     
     #Checking if we have found chaotic behaviour
-    if not converging and lyapunov >= 20:
+    if not converging and lyapunov > 0:
         found +=1;
         print("We found a strange attractor with L = "+ str(lyapunov))
 
@@ -79,9 +81,10 @@ while found < n:
 
         #pyplot design
         pyplot.style.use('dark_background')
+        pyplot.figure(facecolor='black') #To make sure the background is black
         pyplot.axis('off')
+        pyplot.scatter(x_list, y_list, s = 0.1, c = 'white', linewidth = 0)
 
-        pyplot.scatter(x_list, y_list, s = 0.1, c = 'white', linewidth = 0,)
-
-        pyplot.savefig('pics/' + str(time()) + '.png', dpi = 300)
+        #Save figure in pics folder
+        pyplot.savefig('pics/' + str(time()) + '.png', dpi = 500)
         #pyplot.show()
