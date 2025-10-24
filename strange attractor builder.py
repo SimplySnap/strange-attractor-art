@@ -1,97 +1,119 @@
 import random
 import math
-from matplotlib import pyplot as plt
-from matplotlib.animation import FuncAnimation
+import time
+from matplotlib import pyplot
 
-# Number of strange attractors to find
-n = 12
+n = 1 # Number of attractors we want to create
 found = 0
+transient = 500 # Number of transient iterations to skip when calculating lyapunov exponent
 
-# Function to generate a strange attractor
-def generate_attractor():
-    global x, y, xe, ye, a, d0, x_list, y_list, lyapunov, converging
-    x = random.uniform(-0.5, 0.5)
-    y = random.uniform(-0.5, 0.5)
 
-    # Random alternative point nearby - perturb x, y by epsilon
-    xe = x + random.uniform(-0.5, 0.5) / 1000
-    ye = y + random.uniform(-0.5, 0.5) / 1000
+#Setup mpl enviro
+#Artefacts
+#pyplot.clf()
+#pyplot design
+pyplot.style.use('dark_background')
+#pyplot.figure(facecolor='black') #To make sure the background is black
+pyplot.axis('off')
 
-    # Distance between two points
-    dx = xe - x
-    dy = ye - y
-    d0 = math.sqrt(dx * dx + dy * dy)  # sqrt distance
+pyplot.ion()
 
-    a = [random.uniform(-2, 2) for _ in range(12)]
+while found < n:
+    x = random.uniform(-0.5,0.5)
+    y = random.uniform(-0.5,0.5)
 
-    # Lists to store the path, which we graph
-    x_list = [x]
-    y_list = [y]
+    #random alternative point nearby - perturb x,y by epsilon
+    xe = x + random.uniform(-0.5, 0.5)/1000
+    ye = y + random.uniform(-0.5,0.5)/1000
 
-    # Initializing convergence boolean and Lyapunov exponent
-    lyapunov = 0
+    #distance between two points
+    dx = xe-x
+    dy = ye-y
+    d0 = math.sqrt(dx*dx + dy*dy) #sqrt distance
+
+    a = [random.uniform(-2,2) for i in range(17)]
+
+    #lists to store the path, which we graph
+    #x_list = [x]
+    #y_list = [y]
+    x_cur = []
+    y_cur = []
+
+    #initialising convergence boolean and lyapunov exponent
+    lyapunov = 0.0
     converging = False
 
-# Initialize the first attractor
-generate_attractor()
+    #main generating loop
+    for i in range(20000): #Number of points
+        xnew = a[0] + a[1]*x + a[2]*x*x + a[3]*y + a[4]*y*y + a[5]*x*y
+        ynew = a[6] + a[7]*x + a[8]*x*x + a[9]*y + a[10]*y*y + a[11]*x*y
 
-# Create the figure
-fig, ax = plt.subplots()
-plt.style.use('dark_background')
-ax.axis('off')
+        #Checking for convergence to infinity to rule out
+        if abs(xnew) > 1e10 or abs(ynew) > 1e10: 
+            converging = True
+            break
 
-# Initialize the scatter plot with dummy data
-scat = ax.scatter([0], [0], s=0.1, c='white', linewidth=0)
+        #check if we converge to a single value
+        if abs(x-xnew) < 1e-10 and abs(y-ynew) < 1e-10 and i > transient:
+            #Transition period 
+            converging = True
+            break
 
-# Update function for animation
-def update(frame):
-    global x, y, xe, ye, x_list, y_list, lyapunov, converging, found
+            #  Update alternate point at transient time
+        if i == transient:
+            # After the transient phase, reset the perturbation
+            xe = x + random.uniform(-0.5, 0.5) / 1000
+            ye = y + random.uniform(-0.5, 0.5) / 1000
 
-    if converging or found >= n:
-        return scat,
+            dx = xe - x
+            dy = ye - y
+            d0 = math.sqrt(dx*dx + dy*dy)
 
-    # Generate new points
-    xnew = a[0] + a[1] * x + a[2] * x * x + a[3] * y + a[4] * y * y + a[5] * x * y
-    ynew = a[6] + a[7] * x + a[8] * x * x + a[9] * y + a[10] * y * y + a[11] * x * y
+        #checking for chaotic behaviour
+        if i > transient:
+            #compute next alternative point
+            xenew = a[0] + a[1]*xe + a[2]*xe*xe + a[3]*ye + a[4]*ye*ye + a[5]*xe*ye
+            yenew = a[6] + a[7]*xe + a[8]*xe*xe + a[9]*ye + a[10]*ye*ye + a[11]*xe*ye
 
-    if abs(xnew) > 1e10 or abs(ynew) > 1e10:
-        converging = True
+            dx = xenew - xnew
+            dy = yenew - ynew
+            d = math.sqrt(dx*dx + dy*dy)
 
-    if abs(x - xnew) < 1e-10 and abs(y - ynew) < 1e-10:
-        converging = True
+            #update the lyapunov exponent - use eps to prevent problems with convergence
+            eps = 1e-10
+            lyapunov += math.log((d + eps) / (d0 + eps))
+            #lyapunov = lyapunov / (i - 1000)
 
-    # Checking for chaotic behavior
-    if not converging and len(x_list) > 1000:
-        xenew = a[0] + a[1] * xe + a[2] * xe * xe + a[3] * ye + a[4] * ye * ye + a[5] * xe * ye
-        yenew = a[6] + a[7] * xe + a[8] * xe * xe + a[9] * ye + a[10] * ye * ye + a[11] * xe * ye
+            #rescale alternate point
+            scaling_factor = d0 / d  if d != 0 else 1.0 #To keep scaling constant over iterations + numerical stability
+            xe = xnew + dx * scaling_factor
+            ye = ynew + dy * scaling_factor
 
-        dx = xenew - xe
-        dy = yenew - ye
-        d = math.sqrt(dx * dx + dy * dy)
+        #updating (x,y)
+        x = xnew
+        y = ynew
 
-        lyapunov += math.log(abs(d / d0))
+        x_cur.append(x)
+        y_cur.append(y)
+    
+    #Checking if we have found chaotic behaviour
+    lyapunov = lyapunov / (20000 - transient) # Rescale lyapunov exponent
+    if not converging and lyapunov > 0:
+        found +=1;
+        print("We found a strange attractor with Lyapunov exponent "+ str(lyapunov)) 
+        
+        #Loop for dynamic visualisation
+    
 
-        # Rescale alternate point
-        xe = xnew + d0 * dx / d
-        ye = ynew + d0 * dy / d
+        pyplot.scatter(x_cur, y_cur, s = 0.1, c = 'white', linewidth = 0)
+        pyplot.draw()
+        pyplot.pause(4)
+        pyplot.gcf().canvas.draw_idle()  # Ensures full render!!
+        pyplot.gcf().canvas.flush_events()
 
-    x = xnew
-    y = ynew
+        #Save figure in pics folder - NO
+        pyplot.savefig('pics/' + str(time.time()) + '.png', dpi = 500,transparent=False)
+        #Plot attractor
+#pyplot.ioff() # remove to start working on next steps
 
-    x_list.append(x)
-    y_list.append(y)
-
-    if not converging and lyapunov >= 100:
-        found += 1
-        print(f"We found a strange attractor with L = {lyapunov}")
-        generate_attractor()
-
-    # Update scatter plot
-    scat.set_offsets(list(zip(x_list[-100:], y_list[-100:])))
-    return scat,
-
-# Create the animation
-ani = FuncAnimation(fig, update, frames=10000, interval=1, blit=True)
-
-# Display the animation
-plt.show()
+pyplot.show()
